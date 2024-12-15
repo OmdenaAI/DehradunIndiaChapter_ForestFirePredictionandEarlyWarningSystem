@@ -42,7 +42,7 @@ This repository is organized to streamline the process of downloading and organi
         |-- Uttarakhand_land_cover_2012_2023.ipynb
         |-- rasterResampling.ipynb
     |-- scripts
-
+        |-- process_era5land.py
     |-- README.md
 ```
 
@@ -54,7 +54,7 @@ This repository is organized to streamline the process of downloading and organi
 
 1. Clone this repository:
    ```bash
-   git clone <repository_url>
+   git clone https://github.com/OmdenaAI/DehradunIndiaChapter_ForestFirePredictionandEarlyWarningSystem.git
    cd data_collection
    ```
 
