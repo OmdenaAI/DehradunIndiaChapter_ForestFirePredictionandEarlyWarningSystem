@@ -13,9 +13,9 @@ wildfire_analysis_page = st.Page(
     title="Wildfire Analysis",
     icon="🔥",
 )
-realtime_fire_hotspots_page = st.Page(
-    "views/realtime_fire_hotspots.py",
-    title="Real-time Fire Hotspots",
+fire_hotspots_page = st.Page(
+    "views/fire_hotspots.py",
+    title="Fire Hotspots",
     icon="🛰️",
 )
 dataset_visualization = st.Page(
@@ -28,7 +28,7 @@ dataset_visualization = st.Page(
 pg = st.navigation(
     {
         "Info": [home_page],
-        "Analysis": [wildfire_analysis_page, realtime_fire_hotspots_page, dataset_visualization],
+        "Analysis": [wildfire_analysis_page, fire_hotspots_page, dataset_visualization],
     }
 )
 
