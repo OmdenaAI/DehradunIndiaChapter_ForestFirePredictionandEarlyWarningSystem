@@ -1,3 +1,5 @@
 streamlit
 requests
 streamlit-folium
+numpy
+matplotlib
