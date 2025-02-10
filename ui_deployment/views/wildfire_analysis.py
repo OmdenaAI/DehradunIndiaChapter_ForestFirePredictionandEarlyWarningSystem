@@ -11,7 +11,7 @@ latitude = st.number_input("Latitude:", min_value=-90.0, max_value=90.0, step=0.
 longitude = st.number_input("Longitude:", min_value=-180.0, max_value=180.0, step=0.01, format="%.2f")
 
 # Submit Button
-if st.button("Predict Wildfire Spread"):
+if st.button("Predict Next Day Wildfire Spread"):
     # Dummy Prediction Logic for demonstration (replace with actual model calls)
     st.write(f"Predicting for location: Latitude {latitude}, Longitude {longitude}")
     
