@@ -144,10 +144,13 @@ Dynamic features include data that changes over time. Examples:
 2. **Script**:
    Run the script for dynamic data download:
 
-   [NDVI and EVI](https://code.earthengine.google.com/9775a50e67f255750fb7693c02fb0b29)
-   [ET and PET](https://code.earthengine.google.com/9d6a10b8d3238d651c19961743f2633c)
-   [Soil Moisture](https://code.earthengine.google.com/7bca60a861ddca47bef348f6107eb667)
-   [Soil Moisture in Geotiff format](https://code.earthengine.google.com/2a64c72b49ac8406adef2bbe7f5b64d2?noload=1)
+   1. [NDVI and EVI](https://code.earthengine.google.com/9775a50e67f255750fb7693c02fb0b29)
+   
+   2. [ET and PET](https://code.earthengine.google.com/9d6a10b8d3238d651c19961743f2633c)
+   
+   3. [Soil Moisture](https://code.earthengine.google.com/7bca60a861ddca47bef348f6107eb667)
+   
+   4. [Soil Moisture in Geotiff format](https://code.earthengine.google.com/2a64c72b49ac8406adef2bbe7f5b64d2?noload=1)
 
 ---
 
