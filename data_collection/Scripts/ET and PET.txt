@@ -1,0 +1,55 @@
+// Define the region of interest (ROI) - Uttarakhand
+var uttarakhand = ee.FeatureCollection('projects/ee-nafsikagrammatika/assets/uttarakhand_shapefile');
+
+// Define the time period for analysis
+var startDate = '2024-01-01';
+var endDate = '2024-06-30';
+
+// Load the MODIS MOD16A2 dataset
+var dataset = ee.ImageCollection('MODIS/061/MOD16A2')
+                .filterDate(startDate, endDate)
+                .filterBounds(uttarakhand);
+
+// Function to apply scaling and clip ET and PET bands
+var scaleAndClip = function(image) {
+  var scaleFactor = 0.1;
+  var etImage = image.select('ET').multiply(scaleFactor).clip(uttarakhand).rename('ET_mm');
+  var petImage = image.select('PET').multiply(scaleFactor).clip(uttarakhand).rename('PET_mm');
+  return etImage.addBands(petImage).copyProperties(image, ['system:time_start']);
+};
+
+// Apply the processing function
+var processedCollection = dataset.map(scaleAndClip);
+
+// Get list of images and export each as a TIFF
+var imagesList = processedCollection.toList(processedCollection.size());
+var numImages = imagesList.size().getInfo();
+
+for (var i = 0; i < numImages; i++) {
+  var image = ee.Image(imagesList.get(i));
+  var date = ee.Date(image.get('system:time_start')).format('YYYY-MM-dd').getInfo();
+  
+  // Export ET
+  Export.image.toDrive({
+    image: image.select('ET_mm'),
+    description: 'MODIS_ET_' + date,
+    folder: 'MODIS_ET_Exports',
+    fileNamePrefix: 'MODIS_ET_' + date,
+    region: uttarakhand.geometry(),
+    scale: 500,
+    crs: 'EPSG:4326',
+    maxPixels: 1e13
+  });
+
+  // Export PET
+  Export.image.toDrive({
+    image: image.select('PET_mm'),
+    description: 'MODIS_PET_' + date,
+    folder: 'MODIS_PET_Exports',
+    fileNamePrefix: 'MODIS_PET_' + date,
+    region: uttarakhand.geometry(),
+    scale: 500,
+    crs: 'EPSG:4326',
+    maxPixels: 1e13
+  });
+}

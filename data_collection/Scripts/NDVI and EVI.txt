@@ -1,0 +1,88 @@
+// Load the shapefile of Uttarakhand from your GEE assets
+var uttarakhand = ee.FeatureCollection('projects/ee-nafsikagrammatika/assets/uttarakhand_shapefile');
+
+// Load the MODIS dataset and filter by date for the year 2024
+var dataset = ee.ImageCollection('MODIS/061/MOD13A1')
+                .filter(ee.Filter.date('2024-01-01', '2024-12-31'))
+                .filterBounds(uttarakhand);
+
+// Select NDVI and EVI bands
+var ndvi = dataset.select('NDVI');
+var evi = dataset.select('EVI');
+
+// Load water mask dataset (e.g., from JRC Yearly Water Classification History)
+var waterMask = ee.Image('JRC/GSW1_3/GlobalSurfaceWater')
+                 .select('max_extent')
+                 .eq(0);  // Create mask for non-water areas (0 for non-water)
+
+// Apply water mask to NDVI and EVI
+var maskedNDVI = ndvi.map(function(image) {
+  return image.updateMask(waterMask).copyProperties(image, ['system:time_start']);
+});
+
+var maskedEVI = evi.map(function(image) {
+  return image.updateMask(waterMask).copyProperties(image, ['system:time_start']);
+});
+
+// Function to export GeoTIFF for each image
+var exportGeoTIFF = function(image, bandName, descriptionPrefix) {
+  // Extract date information for the filename
+  var date = ee.Date(image.get('system:time_start')).format('YYYY-MM-dd').getInfo();
+  
+  // Export the image for this date as GeoTIFF
+  Export.image.toDrive({
+    image: image.select(bandName),
+    description: descriptionPrefix + '_' + date,
+    scale: 500,
+    region: uttarakhand,
+    fileFormat: 'GeoTIFF',
+    maxPixels: 1e9
+  });
+};
+
+// Function to export images in a collection
+var exportImages = function(collection, bandName, descriptionPrefix) {
+  var imageList = collection.toList(collection.size());
+  var numImages = imageList.size().getInfo();
+  for (var i = 0; i < numImages; i++) {
+    var image = ee.Image(imageList.get(i));
+    exportGeoTIFF(image, bandName, descriptionPrefix);
+  }
+};
+
+// Filter MODIS dataset for the first half of 2024
+var datasetFirstHalf = dataset.filter(ee.Filter.date('2024-01-01', '2024-06-30'));
+var ndviFirstHalf = datasetFirstHalf.select('NDVI');
+var eviFirstHalf = datasetFirstHalf.select('EVI');
+
+var maskedNDVIFirstHalf = ndviFirstHalf.map(function(image) {
+  return image.updateMask(waterMask).copyProperties(image, ['system:time_start']);
+});
+
+var maskedEVIFirstHalf = eviFirstHalf.map(function(image) {
+  return image.updateMask(waterMask).copyProperties(image, ['system:time_start']);
+});
+
+// Export NDVI and EVI images for the first half of 2024
+exportImages(maskedNDVIFirstHalf, 'NDVI', 'Uttarakhand_NDVI_FirstHalf');
+exportImages(maskedEVIFirstHalf, 'EVI', 'Uttarakhand_EVI_FirstHalf');
+
+// Filter MODIS dataset for the second half of 2024
+var datasetSecondHalf = dataset.filter(ee.Filter.date('2024-07-01', '2024-12-31'));
+var ndviSecondHalf = datasetSecondHalf.select('NDVI');
+var eviSecondHalf = datasetSecondHalf.select('EVI');
+
+var maskedNDVISecondHalf = ndviSecondHalf.map(function(image) {
+  return image.updateMask(waterMask).copyProperties(image, ['system:time_start']);
+});
+
+var maskedEVISecondHalf = eviSecondHalf.map(function(image) {
+  return image.updateMask(waterMask).copyProperties(image, ['system:time_start']);
+});
+
+// Export NDVI and EVI images for the second half of 2024
+exportImages(maskedNDVISecondHalf, 'NDVI', 'Uttarakhand_NDVI_SecondHalf');
+exportImages(maskedEVISecondHalf, 'EVI', 'Uttarakhand_EVI_SecondHalf');
+
+
+

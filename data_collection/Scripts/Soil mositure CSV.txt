@@ -1,0 +1,50 @@
+// Load the shapefile from Google Drive
+var shapefile = ee.FeatureCollection('projects/ee-nafsikagrammatika/assets/uttarakhand_shapefile');
+
+// Define the date range for the Sentinel-1 data
+var startDate = '2024-01-01';
+var endDate = '2024-11-30';
+
+// Load the Sentinel-1 ImageCollection
+var sentinel1 = ee.ImageCollection('COPERNICUS/S1_GRD')
+                 .filter(ee.Filter.listContains('transmitterReceiverPolarisation', 'VV'))
+                 .filter(ee.Filter.eq('instrumentMode', 'IW'))
+                 .filterBounds(shapefile)
+                 .filterDate(startDate, endDate);
+
+// Function to derive soil moisture from Sentinel-1 VV and VH polarizations
+function calculateSoilMoisture(image) {
+  var vv = image.select('VV');
+  var vh = image.select('VH');
+  // Simple soil moisture estimation algorithm; adjust according to your needs
+  var soilMoisture = vv.add(vh).divide(2).rename('soil_moisture');
+  return soilMoisture.copyProperties(image, image.propertyNames());
+}
+
+// Apply the soil moisture calculation to each image in the collection
+var soilMoistureCollection = sentinel1.map(calculateSoilMoisture);
+
+// Function to sample an image and add date information
+function sampleImage(image) {
+  var date = image.date().format('YYYY-MM-dd'); // Extract the date
+  var sampled = image.sample({
+    region: shapefile.geometry(),
+    scale: 1000,  // Adjust scale to 1km if needed
+    geometries: true
+  });
+  return sampled.map(function(feature) {
+    return feature.set('date', date);
+  });
+}
+
+// Sample each image in the soil moisture collection
+var sampledData = soilMoistureCollection.map(sampleImage).flatten();
+
+// Export the sampled data to Google Drive as CSV
+Export.table.toDrive({
+  collection: sampledData,
+  description: 'Sentinel1_Derived_SoilMoisture_Uttarakhand',
+  folder: 'SoilMoisture_Exports',  // Folder name in your Google Drive
+  fileNamePrefix: 'Sentinel1_Derived_SoilMoisture_Uttarakhand_2024',
+  fileFormat: 'CSV'
+});

@@ -1,0 +1,59 @@
+// Load the Uttarakhand shapefile
+var uttarakhand = ee.FeatureCollection('projects/ee-nafsikagrammatika/assets/uttarakhand_shapefile');
+
+// Define the date range for Sentinel-1 data
+var startDate = '2024-01-01';
+var endDate = '2024-06-30';
+var scale = 1000;  // Scale for export
+
+// Load the Sentinel-1 ImageCollection
+var sentinel1 = ee.ImageCollection('COPERNICUS/S1_GRD')
+                 .filter(ee.Filter.listContains('transmitterReceiverPolarisation', 'VV'))
+                 .filter(ee.Filter.eq('instrumentMode', 'IW'))
+                 .filterBounds(uttarakhand)
+                 .filterDate(startDate, endDate);
+
+// Function to calculate soil moisture
+function calculateSoilMoisture(image) {
+  var vv = image.select('VV').multiply(0.0001);  // Scaling
+  var vh = image.select('VH').multiply(0.0001);
+  var soilMoisture = vv.add(vh).divide(2).rename('soil_moisture');
+  return soilMoisture.copyProperties(image, ['system:time_start']);
+}
+
+// Apply soil moisture calculation and clip to ROI
+var soilMoistureCollection = sentinel1.map(calculateSoilMoisture).map(function(img) {
+  return img.clip(uttarakhand);
+});
+
+// Define the months for the desired composites
+var months = ee.List.sequence(1, 6);
+
+// Generate monthly composites
+var monthlyComposites = months.map(function(m) {
+  var start = ee.Date.fromYMD(2024, m, 1);
+  var end = start.advance(1, 'month');
+  var composite = soilMoistureCollection.filterDate(start, end).mean()
+    .set('month', m)
+    .set('system:time_start', start.millis());
+  return composite;
+});
+
+// Export each composite in a loop
+var exportComposites = ee.ImageCollection.fromImages(monthlyComposites);
+exportComposites.aggregate_array('month').evaluate(function(months) {
+  months.forEach(function(month, index) {
+    var image = exportComposites.toList(exportComposites.size()).get(index);
+    Export.image.toDrive({
+      image: ee.Image(image),
+      description: 'Uttarakhand_SoilMoisture_2024_Month_' + month,
+      folder: 'SoilMoisture_TIFF_Exports',
+      region: uttarakhand.geometry().bounds(),
+      scale: scale,
+      crs: 'EPSG:4326',
+      fileFormat: 'GeoTIFF',
+      maxPixels: 1e13
+    });
+  });
+});
+
